@@ -1,0 +1,6 @@
+*.model
+*.log
+logs/*
+__pycache__
+*.csv
+.vs/*

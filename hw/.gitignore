@@ -1,0 +1,7 @@
+work
+test_data/*
+*.vstf
+*.wlf
+*.tcl
+*.do
+transcript
