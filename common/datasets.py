@@ -93,7 +93,7 @@ def load_cifar10(args):
         train_dataset, batch_size=args.batch_size, shuffle=True, sampler=train_sampler)
 
     test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=args.test_batch_size, shuffle=True, sampler=test_sampler)
+        test_dataset, batch_size=args.test_batch_size, shuffle=False, sampler=test_sampler)
 
     metadata = {
         "input_shape" : (3,32,32),

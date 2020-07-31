@@ -25,6 +25,15 @@ import common.utils as utils
 # from Quan_layer import *
 import Quan_layer
 
+from train_utils import progress_bar
+
+# from tensorboard_utils import*
+
+
+from torch.utils.tensorboard import SummaryWriter
+
+
+
 # class IntNoGradient(torch.autograd.Function):
 #
 #     @staticmethod
@@ -107,7 +116,7 @@ class QuantizedThriftyNet(nn.Module):
     Residual Thrifty Network
     """
     def __init__(self, input_shape, n_classes, n_filters, n_iter, n_history, pool_strategy, activ="relu",
-                conv_mode="classic", out_mode="pool", n_bits_weight=8, n_bits_activ=8, bias=False):
+                conv_mode="classic", out_mode="pool", bn_mode = "classic", n_bits_weight=8, n_bits_activ=8, bias=False):
         super(QuantizedThriftyNet, self).__init__()
         self.input_shape = input_shape
         self.n_classes = n_classes
@@ -116,6 +125,7 @@ class QuantizedThriftyNet(nn.Module):
         self.n_history = n_history
         self.activ = activ
         self.conv_mode = conv_mode
+        self.bn_mode = bn_mode
         self.bias = bias
 
         self.out_mode = out_mode
@@ -141,21 +151,25 @@ class QuantizedThriftyNet(nn.Module):
             self.n_pool = len(pool_strategy)
             for x in pool_strategy:
                 self.pool_strategy[x] = True
+        # breakpoint()
 
         self.Lactiv = get_activ(activ)
-        self.Lnormalization = nn.ModuleList([nn.BatchNorm2d(n_filters) for x in range(n_iter)])
-        # self.Lnormalization = nn.ModuleList([ShiftBatchNorm2d(n_filters) for x in range(n_iter)])
+
+        if self.bn_mode=="classic":
+            self.Lnormalization = nn.ModuleList([nn.BatchNorm2d(n_filters) for x in range(n_iter)])
+        elif self.bn_mode=="shift":
+            self.Lnormalization = nn.ModuleList([Quan_layer.ShiftBatchNorm2d(n_filters) for x in range(n_iter)])
         #
-        # if self.conv_mode=="classic":
-        #     self.Lconv = nn.Conv2d(n_filters, n_filters, kernel_size=3, stride=1, padding=1, bias=self.bias)
+        if self.conv_mode=="classic":
+            self.Lconv = nn.Conv2d(n_filters, n_filters, kernel_size=3, stride=1, padding=1, bias=self.bias)
         # elif self.conv_mode=="mb1":
         #     self.Lconv = MBConv(n_filters, n_filters, bias=self.bias)
         # elif self.conv_mode=="mb2":
         #     self.Lconv = MBConv(n_filters, n_filters//2, bias=self.bias)
         # elif self.conv_mode=="mb4":
         #     self.Lconv = MBConv(n_filters, n_filters//4, bias=self.bias)
-
-        self.Lconv = Quan_layer.Quan_layer(n_filters, n_filters, kernel_size=3, stride=1, padding=1, bias=self.bias, bits=self.n_bits_activ)
+        elif self.conv_mode=="quan":
+            self.Lconv = Quan_layer.Quan_layer(n_filters, n_filters, kernel_size=3, stride=1, padding=1, bias=self.bias, bits=self.n_bits_activ)
 
         self.activ = get_activ(activ)
 
@@ -202,6 +216,94 @@ class QuantizedThriftyNet(nn.Module):
             out = hist[-1][:,:,0,0]
         return self.LOutput(out)
 
+
+# Training
+def train(epoch):
+    print('\nEpoch: %d' % epoch)
+    t0 = time.time()
+    logger.update({"Epoch" :  epoch, "lr" : args.learning_rate})
+    model.train()
+    train_loss = 0
+    correct = 0
+    total = 0
+    Quan_layer.first_batch = 1
+    Quan_layer.train = 1
+    for batch_idx, (inputs, targets) in enumerate(train_loader):
+        inputs, targets = inputs.to(device), targets.to(device)
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        Quan_layer.first_batch = 0
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
+
+        train_loss += loss.item()
+        _, predicted = outputs.max(1)
+        total += targets.size(0)
+        correct += predicted.eq(targets).sum().item()
+
+        writer.add_scalar('training loss',
+                    train_loss/(1+batch_idx),
+                    epoch * len(train_loader) + batch_idx)
+        writer.add_scalar('training accuracy',
+                    100.*correct/total,
+                    epoch * len(train_loader) + batch_idx)
+
+        progress_bar(batch_idx, len(train_loader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                     % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+    logger.update({"epoch_time" : (time.time() - t0)/60 })
+    logger.update({"train_loss" : loss.item()})
+    logger.update({"train_acc" : 100.*correct/total})
+
+
+def test(epoch):
+    global best_acc
+    model.eval()
+    test_loss = 0
+    correct = 0
+    total = 0
+    Quan_layer.train = 0
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(test_loader):
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+
+            test_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+
+            progress_bar(batch_idx, len(test_loader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
+                         % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
+            writer.add_scalar('test loss',
+                                test_loss/(batch_idx+1),
+                                epoch)
+            writer.add_scalar('test accuracy',
+                            100.*correct/total,
+                            epoch)
+    
+    
+    logger.update({"test_loss" : loss.item()})
+    logger.update({"test_acc" : 100.*correct/total})
+    logger.log()
+    # Save checkpoint.
+    acc = 100.*correct/total
+    if acc > best_acc:
+        print('Saving..')
+        state = {
+            'model': model.state_dict(),
+            'acc': acc,
+            'epoch': epoch,
+        }
+        if not os.path.isdir('checkpoint'):
+            os.mkdir('checkpoint')
+        torch.save(state, './checkpoint/'+ args.name +'_ckpt.pth')
+        best_acc = acc
+
+
+
+
 ## _____________________________________________________________________________________________
 
 if __name__ == '__main__':
@@ -209,20 +311,23 @@ if __name__ == '__main__':
     parser = utils.args()
     parser.add_argument("-n-bits-weight", "--n-bits-weight", default=8, type=int)
     parser.add_argument("-n-bits-activ", "--n-bits-activ", default=8, type=int)
+    # parser.add_argument('--min-lr', type=float, default=1e-4)
+    # parser.add_argument('--patience', type=int, default=7)
+    parser.add_argument("-tid", "--tid", default=0, type=int)
+    parser.add_argument("-bn-mode", "--bn-mode", default="classic", type=str)
+    # parser.add_argument('--resume', '-r', action='store_true',
+                    # help='resume from checkpoint')
     args = parser.parse_args()
     print(args)
+
+    writer = SummaryWriter('runs/'+args.name+'_'+str(args.tid))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     train_loader, test_loader, metadata = get_data_loaders(args)
 
-    if args.topk is not None:
-        topk = tuple(args.topk)
-    else:
-        if args.dataset=="imagenet":
-            topk=(1,5)
-        else:
-            topk=(1,)
+    best_acc = 0  # best test accuracy
+    start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
     # model = get_model(args, metadata)
     model = QuantizedThriftyNet(metadata["input_shape"], metadata["n_classes"], args.filters, n_iter=args.iter, n_history=args.history,
@@ -231,19 +336,6 @@ if __name__ == '__main__':
     #model = factorized_resnet18(metadata["n_classes"])
     #model = resnet18()
 
-    if args.n_params is not None and args.model not in ["block_thrifty", "blockthrifty"]:
-        n = model.n_parameters
-        if n<args.n_params:
-            while n<args.n_params:
-                args.filters += 1
-                model = get_model(args, metadata)
-                n = model.n_parameters
-        if n>args.n_params:
-            while n>args.n_params:
-                args.filters -= 1
-                model = get_model(args,metadata)
-                n = model.n_parameters
-
     n_parameters = sum(p.numel() for p in model.parameters())
     print("N parameters : ", n_parameters)
     if (hasattr(model, "n_filters")):
@@ -251,16 +343,30 @@ if __name__ == '__main__':
     if (hasattr(model, "pool_stategy")):
         print("Pool strategy : ", model.pool_strategy)
 
-    if args.resume is not None:
-        model.load_state_dict(torch.load(args.resume)["state_dict"])
+    # if args.resume is not None:
+    #     model.load_state_dict(torch.load(args.resume)["state_dict"])
+
+
+    if args.resume:
+        # Load checkpoint.
+        print('==> Resuming from checkpoint..')
+        assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
+        checkpoint = torch.load('./checkpoint/'+ args.name +'_ckpt.pth')
+        model.load_state_dict(checkpoint['model'])
+        best_acc = checkpoint['acc']
+        start_epoch = checkpoint['epoch']
+        # torch.save(model.state_dict(), args.name+".model")
 
     model = model.to(device)
 
+    criterion = nn.CrossEntropyLoss()
     scheduler = None
     if args.optimizer=="sgd":
         optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
-        scheduler = ReduceLROnPlateau(optimizer, factor=args.gamma, patience=args.patience, min_lr=args.min_lr)
-        # scheduler = StepLR(optimizer, 100, gamma=0.1)
+        # schedule_fun = lambda epoch, gamma=args.gamma, steps=args.steps : utils.reduceLR(epoch, gamma, steps)
+        # scheduler = LambdaLR(optimizer, lr_lambda= schedule_fun)
+        # scheduler = ReduceLROnPlateau(optimizer, factor=args.gamma, patience=args.patience, min_lr=args.min_lr)
+        scheduler = StepLR(optimizer, 50, gamma=0.1)
     elif args.optimizer=="adam":
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
@@ -279,95 +385,9 @@ if __name__ == '__main__':
             f.write("\nFilters : _ ")
         f.write("\n*******\n")
 
-    print("-"*80 + "\n")
-    test_loss = 0
-    test_acc = torch.zeros(len(topk))
-    lr = optimizer.state_dict()["param_groups"][0]["lr"]
-    for epoch in range(1, args.epochs + 1):
-        t0 = time.time()
-        logger.update({"Epoch" :  epoch, "lr" : lr})
+   
+   
+    for epoch in range(start_epoch, start_epoch+100):
+        train(epoch)
+        test(epoch)
 
-        ## TRAINING
-        model.train()
-        accuracies = torch.zeros(len(topk))
-        loss = 0
-        avg_loss = 0
-
-
-        Quan_layer.first_batch = 1
-        for batch_idx, (data, target) in tqdm(enumerate(train_loader),
-                                              total=len(train_loader),
-                                              position=1,
-                                              leave=False,
-                                              ncols=100,
-                                              unit="batch"):
-
-            Quan_layer.train = 1
-            data, target = data.to(device), target.to(device)
-            optimizer.zero_grad()
-            output = model(data)
-
-            Quan_layer.first_batch = 0
-
-            loss = F.cross_entropy(output, target)
-            avg_loss += loss.item()
-
-            """
-            alpha_loss = F.relu(model.Lblock.alpha - 2) + F.relu(-model.Lblock.alpha)
-            loss += alpha_loss.sum()
-
-            l1_loss = 0
-            for i in range(model.Lblock.alpha.size()[0]):
-                line_i = model.Lblock.alpha[i,1:]
-                l1_loss += F.l1_loss(line_i, torch.zeros_like(line_i))
-            """
-
-            loss.backward()
-            optimizer.step()
-            accuracies += utils.accuracy(output, target, topk=topk)
-            acc_score = accuracies / (1+batch_idx)
-
-            tqdm_log = prefix+"Epoch {}/{}, LR: {:.1E}, Train_Loss: {:.3f}, Test_loss: {:.3f}, ".format(epoch, args.epochs, lr, avg_loss/(1+batch_idx), test_loss)
-            for i,k in enumerate(topk):
-                tqdm_log += "Train_acc(top{}): {:.3f}, Test_acc(top{}): {:.3f}, ".format(k, acc_score[i], k, test_acc[i])
-            tqdm.write(tqdm_log)
-
-        logger.update({"epoch_time" : (time.time() - t0)/60 })
-        logger.update({"train_loss" : loss.item()})
-        for i,k in enumerate(topk):
-            logger.update({"train_acc(top{})".format(k) : acc_score[i]})
-
-        ## TESTING
-
-        Quan_layer.train = 0
-        test_loss = 0
-        test_acc = torch.zeros(len(topk))
-        model.eval()
-        with torch.no_grad():
-            for data, target in test_loader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-                test_loss += F.cross_entropy(output, target, reduction='sum').item()  # sum up batch loss
-                test_acc += utils.accuracy(output, target, topk=topk)
-
-        test_loss /= len(test_loader.dataset)
-        test_acc /= len(test_loader)
-
-        # plot_alphas(model.Lblock, "alpha_e{}.txt".format(epoch))
-
-        logger.update({"test_loss" : test_loss})
-        for i,k in enumerate(topk):
-            logger.update({"test_acc(top{})".format(k) : test_acc[i]})
-
-        if scheduler is not None:
-            scheduler.step(logger["test_loss"])
-        lr = optimizer.state_dict()["param_groups"][0]["lr"]
-        print()
-
-        if args.checkpoint_freq != 0 and epoch%args.checkpoint_freq == 0:
-            name = args.name+ "_e" + str(epoch) + "_acc{:d}.model".format(int(10000*logger["test_acc(top1)"]))
-            torch.save(model.state_dict(), name)
-
-        logger.log()
-
-    torch.save(model.state_dict(), args.name+".model")

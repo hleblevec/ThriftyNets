@@ -150,6 +150,7 @@ begin
       clk                   => clk,
       input_data_available  => input_data_available,
       output_data_available => output_data_available,
+      fm_height             => fm_width,
       fm_width              => fm_width,
       input_tensor          => input_tensor,
       output_tensor         => output_tensor

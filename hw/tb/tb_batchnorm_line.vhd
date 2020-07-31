@@ -44,6 +44,7 @@ architecture sim of tb_batchnorm_line is
   signal input_row     : t_batchnorm_feature_map_row           := (others => (others => '0'));
   signal output_row    : t_batchnorm_feature_map_row           := (others => (others => '0'));
 
+  signal enable      : std_logic := '0';
 
   signal fm_height_array : t_fm_height_array;
   signal batchnorm_in    : t_batchnorm_inputs;
@@ -80,7 +81,7 @@ begin
 
     -- ait for CLK_PERIOD;
     -- fm_heights_loop : for block_number in 0 to NUMBER_OF_BLOCKS-1 loop
-    fm_height_array <= read_batchnorm_fm_height_from_file(0);
+    fm_height_array <= read_conv2d_fm_height_from_file(0);
     -- end loop;
 
     wait for CLK_PERIOD;
@@ -93,26 +94,14 @@ begin
 
     loop_test : while test_count < NUM_TESTS loop
       -- report lf & "-------------------------" & lf & "-- Test #" & integer'image(test_count) & lf & "-------------------------";
-      data_available           <= '1';
+      enable           <= '1';
       fm_width                 <= fm_height_array(test_count);
-      input_row                <= batchnorm_in(test_count).input_tensor(kernel_channel_index)(row_index + kernel_height_index);
-      -- input_row_reg            <= input_row;
-      output_channel_index_reg <= output_channel_index;
-      kernel_height_index_reg  <= kernel_height_index;
-      kernel_channel_index_reg <= kernel_channel_index;
-      enable_reg               <= enable_computation;
-      reset_reg                <= reset_accu;
+      input_row                <= batchnorm_in(test_count).input_tensor(channel_index)(row_index);
+
       wait for CLK_PERIOD;
     end loop;
 
     wait;                               -- forever, after data is loaded
-  end process;
-
-  test_count_incr : process
-  begin
-    wait until reset_accu = '1';
-    wait for CLK_PERIOD;
-    test_count <= test_count + 1;
   end process;
 
 
@@ -132,17 +121,16 @@ begin
     wait for CLK_HALF;
 
     loop_verif : while ref_count < NUM_TESTS loop
-      wait until reset_accu = '1';
       wait for 2*CLK_PERIOD;
 
-      assert output_row(0 to fm_height_array(ref_count)) = batchnorm_out(ref_count).output_tensor(output_channel_index)(row_index)(0 to fm_height_array(ref_count)) report "Error in test #" & integer'image(ref_count) & "!" severity CHECK_ERROR_LEVEL;
+      assert output_row = batchnorm_out(ref_count).output_tensor(channel_index)(row_index) report "Error in test #" & integer'image(ref_count) & "!" severity CHECK_ERROR_LEVEL;
 
-      if output_row(0 to fm_height_array(ref_count)) /= batchnorm_out(ref_count).output_tensor(output_channel_index)(row_index)(0 to fm_height_array(ref_count)) then
+      if output_row /= batchnorm_out(ref_count).output_tensor(channel_index)(row_index) then
         v_error_cnt := v_error_cnt + 1;
       else
         v_success_cnt := v_success_cnt + 1;
       end if;
-      output_line_ref <= batchnorm_out(ref_count).output_tensor(output_channel_index)(row_index);
+      output_line_ref <= batchnorm_out(ref_count).output_tensor(channel_index)(row_index);
       ref_count       <= ref_count + 1;
       wait for CLK_PERIOD;  -- delay of calculation in the recursion unit
     end loop;
@@ -160,7 +148,7 @@ begin
   -- Design under Test (DUT)
   -- ===========================================================================
 
-  DUT : entity work.batchnorm_line
+  DUT : entity work.batchnorm
     port map (
       clk           => clk,
       enable        => enable,

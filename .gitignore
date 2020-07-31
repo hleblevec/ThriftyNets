@@ -4,3 +4,5 @@ rcnn/__pycache__/
 .vscode/
 .git/
 logs/
+runs/
+checkpoint/

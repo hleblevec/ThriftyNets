@@ -14,11 +14,11 @@ entity downsampler is
 
     enable : in std_logic;
 
-    -- fm_height : in natural range 0 to IN_FM_HEIGHT;
-    fm_width  : in natural range 0 to IN_FM_WIDTH;
+    -- fm_height : in natural range 1 to IN_FM_HEIGHT;
+    fm_width  : in natural range 1 to IN_FM_WIDTH;
 
-    input_row : in t_data_tensor;
-    output_row : out t_data_tensor
+    input_row : in t_feature_map_row;
+    output_row : out t_data_t_feature_map_rowtensor
 
   );
 end entity downsampler;

@@ -7,7 +7,7 @@ use work.pkg_param.all;
 use work.pkg_types.all;
 use work.pkg_lut.all;
 
-entity batchnorm_line is
+entity batchnorm is
   port(
     clk : in std_logic;
 
@@ -24,23 +24,22 @@ entity batchnorm_line is
     output_row : out t_feature_map_row
 
     );
-end entity batchnorm_line;
+end entity batchnorm;
 
-architecture rtl of batchnorm_line is
+architecture rtl of batchnorm is
 
 begin
+  
   process(clk)
   begin
-        for r in IN_FM_WIDTH - 1 loop
-          if r < fm_width then
-            if GAMMAS(iter_index)(channel_index)(row_index)(r) > 0 then:
-              output_row(r) <= resize(SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)(row_index)(r)) - BIASES(iter_index)(channel_index), DATA_INT_BW, DATA_FRAC_BW);
-            else
-              output_row(r) <= resize(SHIFT_RIGHT(input_row(r), - GAMMAS(iter_index)(channel_index)(row_index)(r)) - BIASES(iter_index)(channel_index), DATA_INT_BW, DATA_FRAC_BW);
-            end if;
-          end if;
-        end loop;
-      end loop;
+    for r in IN_FM_WIDTH - 1 loop
+      if r < fm_width then
+        if GAMMAS(iter_index)(channel_index)(row_index)(r) > 0 then:
+          output_row(r) <= resize(SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)(row_index)(r)) - BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
+        else
+          output_row(r) <= resize(SHIFT_RIGHT(input_row(r), - GAMMAS(iter_index)(channel_index)(row_index)(r)) - BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
+        end if;
+      end if;
     end loop;
   end process;
 

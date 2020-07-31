@@ -1,7 +1,6 @@
 import torch
 import torch.nn
 import sys
-from math import *
 first_batch=0
 train=0
 class Quan_layer(torch.nn.Conv2d):
@@ -47,9 +46,11 @@ class ShiftBatchNorm2d(torch.nn.BatchNorm2d):
         self.num_features = num_features
 
     def forward(self, input):
-        self.weight = ap2(self.weight/self.running_var)*self.running_var
+        #self.weight.data = ap2(self.weight.data/self.running_var)*self.running_var
+        weight = ap2(self.weight.data/self.running_var)*self.running_var
+#        print(self.weight.data)
         return torch.nn.functional.batch_norm(
-            input, self.running_mean, self.running_var, self.weight, self.bias,
+            input, self.running_mean, self.running_var, weight, self.bias,
             self.training, self.momentum, self.eps)
 
 
@@ -64,7 +65,7 @@ class IntNoGradient(torch.autograd.Function):
         return g
 
 def ap2(x):
-    return sign(x)*2**(round(log2(abs(x))))
+    return torch.sign(x)*2**(torch.round(torch.log2(torch.abs(x))))
 
 def maxWeight(weight,maxi):
     #liste_max = []

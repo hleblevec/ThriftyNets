@@ -46,15 +46,15 @@ package pkg_tb_support is
     input_tensor : t_data_tensor;
   end record;
 
-  type trec_conv2d_out is record
+  type trec_batchnorm_out is record
     output_tensor : t_data_tensor;
   end record;
 
-  type t_fm_height_array is array(0 to NUM_TESTS-1) of natural range 0 to IN_FM_HEIGHT;
+  -- type t_fm_height_array is array(0 to NUM_TESTS-1) of natural range 0 to IN_FM_HEIGHT;
   type t_batchnorm_inputs is array(0 to NUM_TESTS-1) of trec_batchnorm_in;
-  type t_bachnorm_outputs is array(0 to NUM_TESTS-1) of trec_conv2d_out;
+  type t_batchnorm_outputs is array(0 to NUM_TESTS-1) of trec_batchnorm_out;
 
-  impure function read_batchnorm_fm_height_from_file(block_number : natural) return t_fm_height_array;
+  -- impure function read_batchnorm_fm_height_from_file(block_number : natural) return t_fm_height_array;
   impure function read_batchnorm_in_from_file(block_number        : natural; fm_height : t_fm_height_array) return t_batchnorm_inputs;
   impure function read_batchnorm_out_from_file(block_number       : natural; fm_height : t_fm_height_array) return t_batchnorm_outputs;
 
@@ -206,7 +206,7 @@ package body pkg_tb_support is
             v_csv.readline;
             for r in 0 to IN_FM_WIDTH - 1 loop
               if r < fm_height(i) then
-                v_input(i).input_tensor(c)(h)(r) := to_sfixed(v_csv.read_real, DATA_INT_BW-1, -DATA_FRAC_BW)
+                v_input(i).input_tensor(c)(h)(r) := to_sfixed(v_csv.read_real, DATA_INT_BW-1, -DATA_FRAC_BW);
               end if;
             end loop;
           end if;

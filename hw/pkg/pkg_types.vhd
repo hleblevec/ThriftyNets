@@ -32,7 +32,8 @@ package pkg_types is
   type t_kernel_tensor is array(0 to NUM_CHANNELS - 1) of t_kernel_matrix;
   type t_kernels_layer is array(0 to NUM_CHANNELS - 1) of t_kernel_tensor;
 
-  type t_history is array(0 to HISTORY_DEPTH - 1) of t_feature_map_row;
+  type t_history_rows is array(0 to HISTORY_DEPTH - 1) of t_feature_map_row;
+  type t_history is array(0 to HISTORY_DEPTH - 1) of t_data_tensor;
 
   type t_fc_input is array(0 to NUM_CHANNELS - 1) of t_data;
   type t_fc_output is array(0 to NUM_CLASSES - 1) of t_data;
