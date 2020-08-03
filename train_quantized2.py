@@ -219,9 +219,10 @@ class QuantizedThriftyNet(nn.Module):
 
 # Training
 def train(epoch):
-    print('\nEpoch: %d' % epoch)
+    lr = optimizer.state_dict()["param_groups"][0]["lr"]
+    print('\nEpoch: %d, lr: %f' % epoch % lr)
     t0 = time.time()
-    logger.update({"Epoch" :  epoch, "lr" : args.learning_rate})
+    logger.update({"Epoch" :  epoch, "lr" : lr})
     model.train()
     train_loss = 0
     correct = 0
@@ -282,10 +283,13 @@ def test(epoch):
             writer.add_scalar('test accuracy',
                             100.*correct/total,
                             epoch)
-    
-    
+
+
     logger.update({"test_loss" : loss.item()})
     logger.update({"test_acc" : 100.*correct/total})
+    if scheduler is not None:
+        scheduler.step(logger["test_loss"])
+    lr = optimizer.state_dict()["param_groups"][0]["lr"]
     logger.log()
     # Save checkpoint.
     acc = 100.*correct/total
@@ -385,9 +389,9 @@ if __name__ == '__main__':
             f.write("\nFilters : _ ")
         f.write("\n*******\n")
 
-   
-   
-    for epoch in range(start_epoch, start_epoch+100):
+
+
+
+    for epoch in range(start_epoch, start_epoch+args.epochs):
         train(epoch)
         test(epoch)
-
