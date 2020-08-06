@@ -67,11 +67,13 @@ begin
     begin
       for h in 0 to IN_FM_HEIGHT - 1 loop
         if h < to_integer(shift_right(to_unsigned(fm_height, 32), 2)) then
-          
-
-    
-
-  
+          ds_row_enable(2*h) <= '1';
+          ds_row_enable(2*h + 1) <= '0';
+        else
+          ds_row_enable(h) <= '0';
+        end if;
+      end loop;
+    end process;
 
   conv2d : entity work.conv2d
     port map (
@@ -100,6 +102,7 @@ begin
 
       local_batchnorm_enable <= batchnorm_enable and row_enable(h);
       local_res_enable <= res_enable and row_enable(h);
+      local_downsampler_enable <= ds_enable and ds_row_enable(h);
 
 
       relu : entity work.relu
@@ -135,12 +138,12 @@ begin
       downsampler : entity work.downsampler
         port map (
           clk           => clk,
-          enable        => ds_enable,
+          enable        => local_downsampler_enable,
           fm_width      => fm_width,
           input_row     => local_res_output_row,
           output_row    => local_output_row,
           );
-        
+
     end generate;
   end generate;
 
