@@ -66,7 +66,8 @@ begin
   downsampling_rows : process(fm_height)
     begin
       for h in 0 to IN_FM_HEIGHT - 1 loop
-        if h < fm_height and 
+        if h < to_integer(shift_right(to_unsigned(fm_height, 32), 2)) then
+          
 
     
 

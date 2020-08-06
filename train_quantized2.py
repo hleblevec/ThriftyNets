@@ -220,7 +220,7 @@ class QuantizedThriftyNet(nn.Module):
 # Training
 def train(epoch):
     lr = optimizer.state_dict()["param_groups"][0]["lr"]
-    print('\nEpoch: %d, lr: %f' % epoch % lr)
+    print('\nEpoch: %d, lr: %f' % (epoch,lr))
     t0 = time.time()
     logger.update({"Epoch" :  epoch, "lr" : lr})
     model.train()
@@ -288,8 +288,8 @@ def test(epoch):
     logger.update({"test_loss" : loss.item()})
     logger.update({"test_acc" : 100.*correct/total})
     if scheduler is not None:
-        scheduler.step(logger["test_loss"])
-    lr = optimizer.state_dict()["param_groups"][0]["lr"]
+        print("Step")
+        scheduler.step()
     logger.log()
     # Save checkpoint.
     acc = 100.*correct/total
