@@ -136,6 +136,7 @@ class QuantizedThriftyNet(nn.Module):
         # self.n_tests = 10
         # self.max = 17.6794
         # self.max_weight = 0.3638
+        self.max = 0
 
 
         self.pool_strategy = [False]*self.n_iter
@@ -192,8 +193,10 @@ class QuantizedThriftyNet(nn.Module):
         x = F.pad(x, (0, 0, 0, 0, 0, self.n_filters - self.input_shape[0]))
         hist = [None for _ in range(self.n_history-1)] + [x]
         for t in range(self.n_iter):
-            
+
             # print('Mean of activations:', torch.mean(hist[-1]))
+            if abs(torch.max(hist[-1])) > self.max:
+                self.max = abs(torch.max(hist[-1]))
             a = self.Lconv(hist[-1])
             a = self.Lactiv(a)
             a = self.alpha[t,0] * a
