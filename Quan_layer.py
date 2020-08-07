@@ -47,8 +47,8 @@ class Quan_layer_fixed(torch.nn.Conv2d):
         self.out_features = out_features
         self.kernel_width = kernel_size
         self.groups = groups
-        self.max_activation = 18
-        self.max_weight = 0.4
+        self.max_activation = 14.1263
+        self.max_weight = 0.7252
         self.bits=bits
 
         #self.n_bit_w = torch.nn.parameter.Parameter(torch.FloatTensor([8]))
