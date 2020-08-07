@@ -192,6 +192,8 @@ class QuantizedThriftyNet(nn.Module):
         x = F.pad(x, (0, 0, 0, 0, 0, self.n_filters - self.input_shape[0]))
         hist = [None for _ in range(self.n_history-1)] + [x]
         for t in range(self.n_iter):
+            
+            # print('Mean of activations:', torch.mean(hist[-1]))
             a = self.Lconv(hist[-1])
             a = self.Lactiv(a)
             a = self.alpha[t,0] * a
@@ -235,6 +237,7 @@ def train(epoch):
         outputs = model(inputs)
         Quan_layer.first_batch = 0
         loss = criterion(outputs, targets)
+        print('Mean of weights:', torch.mean(model.Lconv.weight.data))
         loss.backward()
         optimizer.step()
 
