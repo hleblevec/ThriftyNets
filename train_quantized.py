@@ -398,3 +398,8 @@ if __name__ == '__main__':
     for epoch in range(start_epoch, start_epoch+args.epochs):
         train(epoch)
         test(epoch)
+    print('==> Saving best acc..')
+    assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
+    checkpoint = torch.load('./checkpoint/'+ args.name +'_ckpt.pth')
+    model.load_state_dict(checkpoint['model'])
+    torch.save(model.state_dict(), args.name+".model")
