@@ -133,7 +133,7 @@ class QuantizedThriftyNet(nn.Module):
         self.n_bits_weight = n_bits_weight
         self.n_bits_activ = n_bits_activ
 
-        # self.n_tests = 10
+        self.n_tests = 10
         # self.max = 14.1263
         # self.max_weight = 0.7252
 
@@ -195,12 +195,28 @@ class QuantizedThriftyNet(nn.Module):
 
             # print('Mean of activations:', torch.mean(hist[-1]))
             a = self.Lconv(hist[-1])
+            fm_height = hist[-1].size(-1)
+
             a = self.Lactiv(a)
             a = self.alpha[t,0] * a
             for i, x in enumerate(hist):
                 if x is not None:
                     a = a + self.alpha[t,i+1] * x
+            if self.n_tests > 0:
+                with open('fm_height.csv', 'a') as f1:
+                    f1.write('%d,\n' % fm_height)
+                with open('batchnorm_in.csv','ab') as f2:
+                    for c in range(self.n_filters):
+                        np.savetxt(f2, a.numpy()[0][c], delimiter=",", fmt="%d", newline=",\n")
+
             a = self.Lnormalization[t](a)
+            if self.n_tests > 0:
+                with open('batchnorm_out.csv','ab') as f3:
+                    for c in range(self.n_filters):
+                        np.savetxt(f3, a.numpy()[0][c], delimiter=",", fmt="%d", newline=",\n")
+                self.n_tests -= 1
+            else:
+                print("Test vector done")
             for i in range(1, self.n_history-1):
                 hist[i] = hist[i+1]
             hist[self.n_history-1] = a
@@ -237,7 +253,7 @@ def train(epoch):
         outputs = model(inputs)
         Quan_layer.first_batch = 0
         loss = criterion(outputs, targets)
-        print('Mean of weights:', torch.mean(model.Lconv.weight.data))
+        # print('Mean of weights:', torch.mean(model.Lconv.weight.data))
         loss.backward()
         optimizer.step()
 
