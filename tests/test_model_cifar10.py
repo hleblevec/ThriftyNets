@@ -22,6 +22,7 @@ sys.path.insert(1, r"./../")
 from common.datasets import *
 from common import utils
 from train_quantized2 import*
+import Quan_layer
 
 
 # DATA_PATH = r"C:\Users\Hugo\torch_datasets"
@@ -70,17 +71,20 @@ train_loader, test_loader, metadata = load_cifar10(args)
 model = QuantizedThriftyNet(metadata["input_shape"], metadata["n_classes"], args.filters, n_iter=args.iter, n_history=args.history,
         pool_strategy=args.pool, conv_mode=args.conv_mode, bn_mode = args.bn_mode, n_bits_weight=args.n_bits_weight, n_bits_activ = args.n_bits_activ)
 
-print('==> Resuming from checkpoint..')
-assert os.path.isdir('../checkpoint'), 'Error: no checkpoint directory found!'
-checkpoint = torch.load('../checkpoint/'+ args.name +'_ckpt.pth')
-model.load_state_dict(checkpoint['model'])
-best_acc = checkpoint['acc']
-start_epoch = checkpoint['epoch']
 
-max_weight = torch.max(model.Lblock.Lconv.weight.data)
+model.load_state_dict(torch.load("cifar10_conv_quan_16bit.model", map_location=device))
+
+model.to(device)
+
+model.eval()
+
+Quan_layer.train = 0
+
+max_weight = torch.max(model.Lconv.weight.data)
 print("Max weight:", max_weight)
+with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(test_loader):
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
 
-# for data, target in test_loader:
-#     data, target = data.to(device), target.to(device)
-#     output = model(data)
-# print('Maximum:', model.max)
+print('Maximum:', model.max)

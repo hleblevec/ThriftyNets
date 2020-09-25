@@ -27,7 +27,7 @@ entity tb_batchnorm_line is
     );
   port(
     -- weights : out t_kernel_matrix;
-    output_line_ref : out t_batchnorm_feature_map_row
+    output_line_ref : out t_feature_map_row
     );
 end entity tb_batchnorm_line;
 
@@ -41,8 +41,8 @@ architecture sim of tb_batchnorm_line is
   signal row_index     : natural range 0 to IN_FM_HEIGHT - 1   := 0;
   signal channel_index : natural range 0 to NUM_CHANNELS - 1   := 0;
   signal iter_index    : natural range 0 to NUM_ITERATIONS - 1 := 0;
-  signal input_row     : t_batchnorm_feature_map_row           := (others => (others => '0'));
-  signal output_row    : t_batchnorm_feature_map_row           := (others => (others => '0'));
+  signal input_row     : t_feature_map_row           := (others => (others => '0'));
+  signal output_row    : t_feature_map_row           := (others => (others => '0'));
 
   signal enable      : std_logic := '0';
 
@@ -90,15 +90,18 @@ begin
       batchnorm_out <= read_batchnorm_out_from_file(block_number, fm_height_array);
     end loop;
 
-    wait for CLK_PERIOD;
+    wait for 5*CLK_PERIOD;
 
     loop_test : while test_count < NUM_TESTS loop
       -- report lf & "-------------------------" & lf & "-- Test #" & integer'image(test_count) & lf & "-------------------------";
       enable           <= '1';
       fm_width                 <= fm_height_array(test_count);
       input_row                <= batchnorm_in(test_count).input_tensor(channel_index)(row_index);
+     
 
       wait for CLK_PERIOD;
+      -- test_count <= test_count +1;
+      -- enable <= '0';
     end loop;
 
     wait;                               -- forever, after data is loaded
@@ -116,23 +119,26 @@ begin
     v_success_cnt := 0;
 
     wait until clk = '1';
-    wait for 20*CLK_PERIOD;             -- first stimuli are applied
+    -- wait for 5*CLK_PERIOD;             -- first stimuli are applied
 
     wait for CLK_HALF;
 
     loop_verif : while ref_count < NUM_TESTS loop
-      wait for 2*CLK_PERIOD;
+      -- wait until enable = '1';
+      wait for CLK_PERIOD;
 
+      if enable = '1' then
       assert output_row = batchnorm_out(ref_count).output_tensor(channel_index)(row_index) report "Error in test #" & integer'image(ref_count) & "!" severity CHECK_ERROR_LEVEL;
-
-      if output_row /= batchnorm_out(ref_count).output_tensor(channel_index)(row_index) then
-        v_error_cnt := v_error_cnt + 1;
-      else
-        v_success_cnt := v_success_cnt + 1;
+      
+        if output_row /= batchnorm_out(ref_count).output_tensor(channel_index)(row_index) then
+          v_error_cnt := v_error_cnt + 1;
+        else
+          v_success_cnt := v_success_cnt + 1;
+        end if;
+        output_line_ref <= batchnorm_out(ref_count).output_tensor(channel_index)(row_index);
+        -- ref_count       <= ref_count + 1;
+        wait for CLK_PERIOD;  -- delay of calculation in the recursion unit
       end if;
-      output_line_ref <= batchnorm_out(ref_count).output_tensor(channel_index)(row_index);
-      ref_count       <= ref_count + 1;
-      wait for CLK_PERIOD;  -- delay of calculation in the recursion unit
     end loop;
 
     wait for 20*CLK_PERIOD;

@@ -7,6 +7,8 @@ use work.pkg_param.all;
 use work.pkg_types.all;
 use work.pkg_lut.all;
 
+use work.fixed_pkg.all;
+
 entity fc_layer is
   port(
     clk : in std_logic;

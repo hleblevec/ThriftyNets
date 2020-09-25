@@ -42,11 +42,8 @@ package pkg_types is
   type t_biases_array is array(0 to NUM_CHANNELS - 1) of t_bias;
   type t_biases_matrix is array(0 to NUM_ITERATIONS - 1) of t_biases_array;
 
-  subtype t_gamma is sfixed(GAMMA_INT_BW - 1 downto -GAMMA_FRAC_BW);
-  type t_gammas_row is array(0 to IN_FM_WIDTH - 1) of t_gamma;
-  type t_gammas_matrix is array(0 to IN_FM_HEIGHT - 1) of t_gammas_row;
-  type t_gammas_tensor is array(0 to NUM_CHANNELS - 1) of t_gammas_matrix;
-  type t_gammas is array(0 to NUM_ITERATIONS - 1) of t_gammas_tensor;
-
+  subtype t_gamma is integer;
+  type t_gammas_array is array(0 to NUM_CHANNELS - 1) of t_gamma;
+  type t_gammas_matrix is array(0 to NUM_ITERATIONS - 1) of t_gammas_array;
 
 end pkg_types;

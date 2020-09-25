@@ -6,6 +6,7 @@ library work;
 use work.pkg_param.all;
 use work.pkg_types.all;
 use work.pkg_lut.all;
+use work.fixed_pkg.all;
 
 entity batchnorm is
   port(
@@ -28,19 +29,27 @@ end entity batchnorm;
 
 architecture rtl of batchnorm is
 
+  
+  signal shifted_row : t_feature_map_row;
+  signal bias_added_row : t_feature_map_row;
+
 begin
   
   process(clk)
   begin
-    for r in IN_FM_WIDTH - 1 loop
-      if r < fm_width then
-        if GAMMAS(iter_index)(channel_index)(row_index)(r) > 0 then:
-          output_row(r) <= resize(SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)(row_index)(r)) - BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
-        else
-          output_row(r) <= resize(SHIFT_RIGHT(input_row(r), - GAMMAS(iter_index)(channel_index)(row_index)(r)) - BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
+    if enable = '1' then
+      for r in 0 to IN_FM_WIDTH - 1 loop
+        if r < fm_width then
+          if GAMMAS(iter_index)(channel_index) > 0 then
+            shifted_row(r) <= SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index));
+            -- bias_added_row(r) <= SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)) + BIASES(iter_index)(channel_index);
+            output_row(r) <= resize(SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)) + BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
+          else
+            output_row(r) <= resize(SHIFT_RIGHT(input_row(r), - GAMMAS(iter_index)(channel_index)) + BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
+          end if;
         end if;
-      end if;
-    end loop;
+      end loop;
+    end if;
   end process;
 
 end architecture rtl;

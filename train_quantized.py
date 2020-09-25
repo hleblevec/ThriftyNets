@@ -202,21 +202,22 @@ class QuantizedThriftyNet(nn.Module):
             for i, x in enumerate(hist):
                 if x is not None:
                     a = a + self.alpha[t,i+1] * x
-            if self.n_tests > 0:
-                with open('fm_height.csv', 'a') as f1:
-                    f1.write('%d,\n' % fm_height)
-                with open('batchnorm_in.csv','ab') as f2:
-                    for c in range(self.n_filters):
-                        np.savetxt(f2, a.numpy()[0][c], delimiter=",", fmt="%d", newline=",\n")
-
+            # if self.n_tests > 0:
+            #     with open('fm_height.csv', 'a') as f1:
+            #         f1.write('%d,\n' % fm_height)
+            #     with open('batchnorm_in.csv','ab') as f2:
+            #         for c in range(self.n_filters):
+            #             np.savetxt(f2, a.cpu().detach().numpy()[0][c], delimiter=",", fmt="%f", newline=",\n")
+            # breakpoint()
             a = self.Lnormalization[t](a)
-            if self.n_tests > 0:
-                with open('batchnorm_out.csv','ab') as f3:
-                    for c in range(self.n_filters):
-                        np.savetxt(f3, a.numpy()[0][c], delimiter=",", fmt="%d", newline=",\n")
-                self.n_tests -= 1
-            else:
-                print("Test vector done")
+            # breakpoint()
+            # if self.n_tests > 0:
+            #     with open('batchnorm_out.csv','ab') as f3:
+            #         for c in range(self.n_filters):
+            #             np.savetxt(f3, a.cpu().detach().numpy()[0][c], delimiter=",", fmt="%f", newline=",\n")
+            #     self.n_tests -= 1
+            # else:
+            #     print("Test vector done")
             for i in range(1, self.n_history-1):
                 hist[i] = hist[i+1]
             hist[self.n_history-1] = a

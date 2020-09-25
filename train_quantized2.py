@@ -240,7 +240,7 @@ def train(epoch):
         outputs = model(inputs)
         Quan_layer.first_batch = 0
         loss = criterion(outputs, targets)
-        print('Mean of weights:', torch.mean(model.Lconv.weight.data))
+        # print('Mean of weights:', torch.mean(model.Lconv.weight.data))
         loss.backward()
         optimizer.step()
 
@@ -401,3 +401,8 @@ if __name__ == '__main__':
     for epoch in range(start_epoch, start_epoch+args.epochs):
         train(epoch)
         test(epoch)
+    print('==> Saving best acc..')
+    assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
+    checkpoint = torch.load('./checkpoint/'+ args.name +'_ckpt.pth')
+    model.load_state_dict(checkpoint['model'])
+    torch.save(model.state_dict(), args.name+".model")

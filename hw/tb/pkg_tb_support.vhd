@@ -13,7 +13,7 @@ use work.fixed_pkg.all;
 
 package pkg_tb_support is
 
-  constant NUM_TESTS : natural := 100;
+  constant NUM_TESTS : natural := 10;
 
 
   ------------------------------------------------------

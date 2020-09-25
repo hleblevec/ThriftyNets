@@ -1,0 +1,79 @@
+/homes/hlebleve/internship/ThriftyNets/hw/tb/pkg_tb_support.vhd {1 {vcom -work work -2002 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/tb/pkg_tb_support.vhd
+Model Technology ModelSim SE-64 vcom 10.6d Compiler 2018.02 Feb 23 2018
+Start time: 11:28:37 on Sep 10,2020
+vcom -reportprogress 300 -work work -2002 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/tb/pkg_tb_support.vhd 
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package pkg_csv_reader
+-- Loading package MATH_REAL
+-- Loading package pkg_param
+-- Loading package instance fixed_pkg
+-- Loading package fixed_float_types
+-- Loading package fixed_generic_pkg
+-- Loading package body fixed_generic_pkg
+-- Loading package pkg_types
+-- Loading package pkg_lut
+-- Compiling package pkg_tb_support
+-- Compiling package body pkg_tb_support
+-- Loading package pkg_tb_support
+End time: 11:28:37 on Sep 10,2020, Elapsed time: 0:00:00
+Errors: 0, Warnings: 0
+
+} {} {}} /homes/hlebleve/internship/ThriftyNets/hw/tb/pkg_csv_reader.vhd {1 {vcom -work work -2002 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/tb/pkg_csv_reader.vhd
+Model Technology ModelSim SE-64 vcom 10.6d Compiler 2018.02 Feb 23 2018
+Start time: 11:28:37 on Sep 10,2020
+vcom -reportprogress 300 -work work -2002 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/tb/pkg_csv_reader.vhd 
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Compiling package pkg_csv_reader
+-- Compiling package body pkg_csv_reader
+-- Loading package pkg_csv_reader
+End time: 11:28:38 on Sep 10,2020, Elapsed time: 0:00:01
+Errors: 0, Warnings: 0
+
+} {} {}} /homes/hlebleve/internship/ThriftyNets/hw/tb/tb_batchnorm_line.vhd {1 {vcom -work work -2008 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/tb/tb_batchnorm_line.vhd
+Model Technology ModelSim SE-64 vcom 10.6d Compiler 2018.02 Feb 23 2018
+Start time: 11:28:38 on Sep 10,2020
+vcom -reportprogress 300 -work work -2008 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/tb/tb_batchnorm_line.vhd 
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Loading package MATH_REAL
+-- Loading package pkg_param
+-- Loading package instance fixed_pkg
+-- Loading package fixed_float_types
+-- Loading package fixed_generic_pkg
+-- Loading package body fixed_generic_pkg
+-- Loading package pkg_types
+-- Loading package pkg_lut
+-- Loading package pkg_csv_reader
+-- Loading package pkg_tb_support
+-- Compiling entity tb_batchnorm_line
+-- Compiling architecture sim of tb_batchnorm_line
+-- Loading entity batchnorm
+End time: 11:28:38 on Sep 10,2020, Elapsed time: 0:00:00
+Errors: 0, Warnings: 0
+
+} {} {}} /homes/hlebleve/internship/ThriftyNets/hw/pkg/pkg_types.vhd {1 {vcom -work work -2008 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/pkg/pkg_types.vhd
+Model Technology ModelSim SE-64 vcom 10.6d Compiler 2018.02 Feb 23 2018
+Start time: 11:28:36 on Sep 10,2020
+vcom -reportprogress 300 -work work -2008 -explicit -vopt /homes/hlebleve/internship/ThriftyNets/hw/pkg/pkg_types.vhd 
+-- Loading package STANDARD
+-- Loading package TEXTIO
+-- Loading package std_logic_1164
+-- Loading package NUMERIC_STD
+-- Compiling package instance fixed_pkg
+-- Loading package fixed_float_types
+-- Loading package fixed_generic_pkg
+-- Loading package MATH_REAL
+-- Loading package body fixed_generic_pkg
+-- Loading package instance fixed_pkg
+-- Loading package pkg_param
+-- Compiling package pkg_types
+End time: 11:28:37 on Sep 10,2020, Elapsed time: 0:00:01
+Errors: 0, Warnings: 0
+
+} {} {}}

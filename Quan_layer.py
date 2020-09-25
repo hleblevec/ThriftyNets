@@ -47,8 +47,8 @@ class Quan_layer_fixed(torch.nn.Conv2d):
         self.out_features = out_features
         self.kernel_width = kernel_size
         self.groups = groups
-        self.max_activation = 14.1263
-        self.max_weight = 0.7252
+        self.max_activation = 47.7038
+        self.max_weight = 0.6026
         self.bits=bits
 
         #self.n_bit_w = torch.nn.parameter.Parameter(torch.FloatTensor([8]))
@@ -83,11 +83,17 @@ class ShiftBatchNorm2d(torch.nn.BatchNorm2d):
 
     def forward(self, input):
         #self.weight.data = ap2(self.weight.data/self.running_var)*self.running_var
-        weight = ap2(self.weight.data/self.running_var)*self.running_var
-#        print(self.weight.data)
-        return torch.nn.functional.batch_norm(
-            input, self.running_mean, self.running_var, weight, self.bias,
+        b_weight = ap2(self.weight.data/torch.sqrt(self.running_var))*torch.sqrt(self.running_var)
+        # b_weight = Ap2NoGradient.apply(self.weight/torch.sqrt(self.running_var))*torch.sqrt(self.running_var)
+        # print(torch.min(weight))
+        # print(torch.min(self.bias.data))
+        # print(torch.min(self.bias.data))
+        # breakpoint()
+        output = torch.nn.functional.batch_norm(
+            input, self.running_mean, self.running_var, b_weight, self.bias,
             self.training, self.momentum, self.eps)
+        # breakpoint()
+        return output
 
 
 class IntNoGradient(torch.autograd.Function):
@@ -105,6 +111,15 @@ class IntNoGradientFloor(torch.autograd.Function):
     @staticmethod
     def forward(ctx, x):
         return x.floor()
+
+    @staticmethod
+    def backward(ctx, g):
+        return g
+
+class Ap2NoGradient(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x):
+        return torch.sign(x)*2**(torch.round(torch.log2(torch.abs(x))))
 
     @staticmethod
     def backward(ctx, g):

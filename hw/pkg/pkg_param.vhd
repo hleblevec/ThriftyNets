@@ -15,14 +15,17 @@ package pkg_param is
   constant IN_FM_WIDTH    : natural := 28;
   constant HISTORY_DEPTH  : natural := 1;
 
-  constant DATA_INT_BW    : natural := 6;
-  constant DATA_FRAC_BW   : natural := 10;
+  constant DATA_INT_BW    : natural := 4;
+  constant DATA_FRAC_BW   : natural := 12;
   constant WEIGHT_INT_BW  : natural := 1;
   constant WEIGHT_FRAC_BW : natural := 7;
-  constant BIAS_INT_BW    : natural := 8;
-  constant BIAS_FRAC_BW   : natural := 8;
+  constant BIAS_INT_BW    : natural := 5;
+  constant BIAS_FRAC_BW   : natural := 11;
   constant GAMMA_INT_BW   : natural := 8;
   constant GAMMA_FRAC_BW  : natural := 8;
+
+  -- constant GAMMA_SHIFT_LOW : integer := 1;
+  -- constant GAMMA_SHIFT_HIGH : integer := 6;
 
   constant ALPHA_0       : real    := 0.1;
   constant ALPHA_1       : real    := 0.9;
