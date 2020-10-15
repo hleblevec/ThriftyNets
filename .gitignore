@@ -6,3 +6,4 @@ rcnn/__pycache__/
 logs/
 runs/
 checkpoint/
+tests/
