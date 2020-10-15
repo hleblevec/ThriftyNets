@@ -136,15 +136,20 @@ begin
       local_downsampler_enable <= ds_enable and ds_row_enable(h);
       local_history_rows <= EXTRACT_HISTORY_ROWS(history, c, h);
 
-      serial_outputs : process(clk)
+      
+      local_batchnorm_input_row <= local_res_output_row;
+      local_ds_input_row <= local_batchnorm_output_row;
+     
+      write_output : process(clk)
       begin
         if rising_edge(clk) then
-          local_batchnorm_input_row <= local_batchnorm_input_row;
-          local_ds_input_row <= local_batchnorm_output_row;
+          if h < fm_width + 1 then
+            output_tensor(c)(h) <= local_output_row;
+          else
+            output_tensor(c)(h) <= (others => (others => '0'));
+          end if;
         end if;
       end process;
-
-      
 
       relu : entity work.relu
         port map (
@@ -159,17 +164,17 @@ begin
       residual_adder : entity work.residual_adder
         port map (
           clk           => clk,
-          enable        => res_enable,
+          enable        => local_res_enable,
           fm_width      => fm_width,
           history_rows  => local_history_rows,
           input_row  => local_relu_output_row,
-          output_row => local_batchnorm_input_row
+          output_row => local_res_output_row
           );
 
         batchnorm : entity work.batchnorm
         port map (
           clk           => clk,
-          enable        => batchnorm_enable,
+          enable        => local_batchnorm_enable,
           fm_width      => fm_width,
           iter_index    => iter_index,
           channel_index => c,

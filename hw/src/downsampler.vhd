@@ -35,10 +35,14 @@ architecture rtl of downsampler is
     process(clk)
     begin
       if rising_edge(clk) then
-        for r in 0 to IN_FM_WIDTH - 1 loop
-          if r < out_fm_width then
-            output_row(r) <= input_row(2*r);
+        if enable = '1' then
+          for r in 0 to IN_FM_WIDTH - 1 loop
+            if r < out_fm_width then
+              output_row(r) <= input_row(2*r);
+            end if;
           end if;
+        else
+          output_row <= input_row;
         end loop;
       end if;
     end process;
