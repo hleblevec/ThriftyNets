@@ -1,3 +1,11 @@
+--------------------------------------------------------------------------------
+-- Name : batchnorm.vhd
+-- Description : Batch normalisation of one line of a channel of a tensor.
+-- It uses a bit shift in place of the multiplication, where the size of the
+-- shift is stored in
+
+
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -14,7 +22,6 @@ entity batchnorm is
 
     enable : in std_logic;
 
-    -- fm_height : in natural range 1 to IN_FM_HEIGHT;
     fm_width  : in natural range 1 to IN_FM_WIDTH;
 
     iter_index : in natural range 0 to NUM_ITERATIONS - 1;
@@ -29,20 +36,14 @@ end entity batchnorm;
 
 architecture rtl of batchnorm is
 
-  
-  signal shifted_row : t_feature_map_row;
-  signal bias_added_row : t_feature_map_row;
-
 begin
-  
+
   process(clk)
   begin
     if enable = '1' then
       for r in 0 to IN_FM_WIDTH - 1 loop
         if r < fm_width then
           if GAMMAS(iter_index)(channel_index) > 0 then
-            shifted_row(r) <= SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index));
-            -- bias_added_row(r) <= SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)) + BIASES(iter_index)(channel_index);
             output_row(r) <= resize(SHIFT_LEFT(input_row(r), GAMMAS(iter_index)(channel_index)) + BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
           else
             output_row(r) <= resize(SHIFT_RIGHT(input_row(r), - GAMMAS(iter_index)(channel_index)) + BIASES(iter_index)(channel_index), DATA_INT_BW - 1, -DATA_FRAC_BW);
